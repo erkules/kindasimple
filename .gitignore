@@ -1,0 +1,10 @@
+terraform.tfstate
+terraform.tfstate.backup
+certs
+ini
+parameter.tvars
+.terraform
+output.tf.bak
+clusterfiles
+deployfiles/
+

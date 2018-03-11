@@ -1,0 +1,46 @@
+[Unit]
+Description = Kubelet Service
+After       = network.target docker.service k8sgencert.service
+[Service]
+ExecStartPre = -/usr/bin/mkdir -p /usr/local/bin
+ExecStartPre = -/usr/bin/docker run --rm -v /usr/local/bin:/srv {{hyperkubeimage}} sh -c 'cp /hyperkube /srv/kubectl'
+ExecStartPre = -/usr/bin/mkdir -p /etc/kubernetes/manifests
+ExecStartPre = -/usr/bin/docker rm -f kubelet
+ExecStartPre = -/bin/mkdir -p /var/lib/kubelet
+ExecStartPre = -/bin/mount --bind /var/lib/kubelet /var/lib/kubelet
+ExecStartPre = -/bin/mount --make-shared /var/lib/kubelet
+ExecStart    =  /usr/bin/docker run  --rm --name=kubelet --net=host  --pid=host --privileged=true -v /etc/kubernetes/ssl:/etc/kubernetes/ssl:ro \
+-v /:/rootfs:ro \
+-v /sys:/sys:ro \
+-v /var/lib/docker:/var/lib/docker:rw \
+-v /var/lib/kubelet:/var/lib/kubelet:shared \
+-v /lib/modules:/lib/modules:ro \
+-v /var/run:/var/run:rw \
+-v /etc/kubernetes/manifests:/etc/kubernetes/manifests:rw \
+-v /etc/cni/:/etc/cni/:rw \
+-v /opt/cni/bin:/opt/cni/bin \
+{{hyperkubeimage}} kubelet --pod-manifest-path /etc/kubernetes/manifests --allow-privileged true  \
+--kubeconfig=/etc/kubernetes/ssl/kubeconfig-node.yml \
+--container-runtime=docker \
+--allow-privileged=true \
+--cluster_dns=10.30.10.11 \
+--cluster_domain=cluster.local \
+--network-plugin=cni \
+{% if  "master" in group_names  %}
+--register-with-taints=node-role.kubernetes.io/master=:NoSchedule \
+--node-labels=node-role.kubernetes.io/master \
+{% else %}
+--node-labels=node-role.kubernetes.io/worker \
+--node-labels=node-role.kubernetes.io/node \
+{% endif %}
+--kube-reserved=memory=200Mi,cpu=100m \
+--system-reserved=memory=200Mi,cpu=100m \
+--volume-plugin-dir=/var/lib/kubelet/volumeplugins \
+--hostname-override={{ ansible_eth0.ipv4.address }} \
+--pod-manifest-path=/etc/kubernetes/manifests
+Restart=         always
+RestartSec=      10
+TimeoutStartSec= 300
+
+[Install]
+WantedBy=multi-user.target

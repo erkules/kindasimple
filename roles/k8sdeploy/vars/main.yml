@@ -1,0 +1,11 @@
+---
+# vars file for k8s_addons
+k8s_addons:
+- 10-kube-system-serviceaccount.yml
+- 20-kube-proxy.yaml
+- 22-kube-dns-all.yaml
+- 30-canal.yaml
+- 40-heapster.yaml
+- 44-kubernetes-dashboard.yaml
+- 50-ingress.yaml
+localdeploydir: ./deployfiles

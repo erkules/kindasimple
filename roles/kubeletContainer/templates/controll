@@ -1,0 +1,138 @@
+#cloud-config
+packages:
+- ${package}
+
+runcmd:
+- systemctl start ${package}
+- systemctl enable ${package}
+- systemctl start etcd
+- systemctl enable etcd
+
+
+write_files:
+- path:      /etc/kubernetes/ssl/kubeconfig-controller.yml
+  permissions:       0644
+  content: |
+    apiVersion: v1
+    kind: Config
+    current-context: k8s
+    clusters:
+    - name: controller
+      cluster:
+        server: https://IPADD:6443
+        certificate-authority: /etc/kubernetes/ssl/ca.pem
+    users:
+    - name: controller
+      user:
+        client-certificate: /etc/kubernetes/ssl/controller.pem
+        client-key:         /etc/kubernetes/ssl/controller-key.pem
+    contexts:
+      - name: k8s
+        context:
+          cluster: controller
+          user: controller
+- path:      /etc/kubernetes/ssl/kubeconfig-scheduler.yml
+  permissions:       0644
+  content: |
+    apiVersion: v1
+    kind: Config
+    current-context: k8s
+    clusters:
+    - name: cluster
+      cluster:
+        server: https://IPADD:6443
+        certificate-authority: /etc/kubernetes/ssl/ca.pem
+    users:
+    - name: scheduler
+      user:
+        client-certificate: /etc/kubernetes/ssl/scheduler.pem
+        client-key:         /etc/kubernetes/ssl/scheduler-key.pem
+    contexts:
+      - name: k8s
+        context:
+          cluster: cluster
+          user:  scheduler
+- path: /etc/systemd/system/etcd.service
+  content: |
+    [Unit]
+    Description = Etcd Service
+    After       = network.target docker.service k8sgencert.service
+    [Service]
+    ExecStartPre = -/usr/bin/docker rm -f etcd
+    ExecStart   =  /usr/bin/docker run  -v etcd:/data/  --rm --net=host -v /etc/kubernetes/ssl:/etc/kubernetes/ssl:ro \
+    --name=etcd  "${etcdimage}" etcd  --debug --data-dir /data
+    Restart      = always
+    RestartSec=10
+    [Install]
+    WantedBy    = multi-user.target
+- path: /etc/systemd/system/apiserver.service
+  content: |
+    [Unit]
+    Description = Kubelet Apiserver
+    After       = network.target docker.service k8sgencert.service
+    [Service]
+    ExecStartPre = -/usr/bin/docker rm -f apiserver
+    ExecStart    = /usr/bin/docker run --rm --name  apiserver -v /etc/kubernetes/ssl:/etc/kubernetes/ssl:ro \
+                   --net=host ${hyperkubeimage} \
+                   /hyperkube apiserver  \
+                   --allow-privileged=true \
+                   --service-cluster-ip-range=10.30.10.0/24 \
+                   --insecure-bind-address=127.0.0.1 \
+                   --apiserver-count=1 \
+                   --tls-cert-file=/etc/kubernetes/ssl/apiserver.pem \
+                   --tls-private-key-file=/etc/kubernetes/ssl/apiserver-key.pem \
+                   --client-ca-file=/etc/kubernetes/ssl/ca.pem \
+                   --bind-address=0.0.0.0 \
+                   --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota,DefaultTolerationSeconds,PersistentVolumeLabel,NodeRestriction \
+                   --authorization-mode=Node,RBAC \
+                   --etcd-servers=http://localhost:2379  \
+                   --v=2 \
+                   --service-account-key-file=/etc/kubernetes/ssl/apiserver-key.pem
+    Restart=         always
+    RestartSec=      10
+    TimeoutStartSec= 300
+
+    [Install]
+    WantedBy=multi-user.target
+- path: /etc/systemd/system/controller.service
+  content: |
+    [Unit]
+    Description = Kubelet Controller
+    After       = network.target docker.service apiserver.service k8sgencert.service
+    [Service]
+    ExecStartPre = -/usr/bin/docker rm -f controller
+    ExecStart    = /usr/bin/docker run --rm --name  controller -v /etc/kubernetes/ssl:/etc/kubernetes/ssl:ro ${hyperkubeimage} \
+                   /hyperkube \
+                   controller-manager \
+                   --kubeconfig=/etc/kubernetes/ssl/kubeconfig-controller.yml \
+                   --leader-elect=true \
+                   --service-account-private-key-file=/etc/kubernetes/ssl/apiserver-key.pem \
+                   --root-ca-file=/etc/kubernetes/ssl/ca.pem \
+                   --cluster-cidr=10.244.0.0/16 \
+                   --allocate-node-cidrs=true \
+                   --enable-dynamic-provisioning=true \
+                   --cluster-signing-cert-file=/etc/kubernetes/ssl/ca.pem \
+                   --cluster-signing-key-file=/etc/kubernetes/ssl/ca-key.pem  \
+                   --use-service-account-credentials
+    Restart=         always
+    RestartSec=      10
+    TimeoutStartSec= 300
+
+    [Install]
+    WantedBy=multi-user.target
+
+- path: /etc/systemd/system/scheduler.service
+  content: |
+    [Unit]
+    Description = Kubelet Controller
+    After       = network.target docker.service apiserver.service k8sgencert.service
+    [Service]
+    ExecStartPre = -/usr/bin/docker rm -f scheduler
+    ExecStart    = /usr/bin/docker run --rm --name  scheduler -v /etc/kubernetes/ssl:/etc/kubernetes/ssl:ro ${hyperkubeimage} \
+                   /hyperkube scheduler  --leader-elect=true --kubeconfig /etc/kubernetes/ssl/kubeconfig-scheduler.yml
+    Restart=         always
+    RestartSec=      10
+    TimeoutStartSec= 300
+
+    [Install]
+    WantedBy=multi-user.target

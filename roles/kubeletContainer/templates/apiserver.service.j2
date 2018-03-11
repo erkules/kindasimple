@@ -1,0 +1,27 @@
+[Unit]
+Description = Kubelet Apiserver
+After       = network.target docker.service k8sgencert.service
+[Service]
+ExecStartPre = -/usr/bin/docker rm -f apiserver
+ExecStart    = /usr/bin/docker run --rm --name  apiserver -v /etc/kubernetes/ssl:/etc/kubernetes/ssl:ro \
+               --net=host {{hyperkubeimage}} \
+               /hyperkube apiserver  \
+               --allow-privileged=true \
+               --service-cluster-ip-range=10.30.10.0/24 \
+               --insecure-bind-address=127.0.0.1 \
+               --apiserver-count=1 \
+               --tls-cert-file=/etc/kubernetes/ssl/apiserver.pem \
+               --tls-private-key-file=/etc/kubernetes/ssl/apiserver-key.pem \
+               --client-ca-file=/etc/kubernetes/ssl/ca.pem \
+               --bind-address=0.0.0.0 \
+               --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota,DefaultTolerationSeconds,PersistentVolumeLabel,NodeRestriction \
+               --authorization-mode=Node,RBAC \
+               --etcd-servers=http://localhost:2379  \
+               --v=2 \
+               --service-account-key-file=/etc/kubernetes/ssl/apiserver-key.pem
+Restart=         always
+RestartSec=      10
+TimeoutStartSec= 300
+
+[Install]
+WantedBy=multi-user.target

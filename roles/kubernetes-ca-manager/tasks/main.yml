@@ -1,0 +1,275 @@
+---
+# tasks file for kubernetes-ca-manager
+
+- name: Create lokal cert directory
+  file:
+    path:  "{{ playbook_dir }}/certs"
+    state: directory
+  delegate_to: 127.0.0.1
+
+- name: Create root CA key
+  command:   openssl genrsa -out ca-key.pem 4096
+  args:
+    chdir:   certs
+    creates: ca-key.pem
+  delegate_to: 127.0.0.1
+
+- name: Create the CA certificate
+  command:   openssl req -x509 -new -nodes -key ca-key.pem -days 1000 -out  ca.pem -subj "/CN=kube-ca"
+  args:
+    chdir:   certs
+    creates: ca.pem
+  delegate_to: 127.0.0.1
+- name: Copy Kubernetes API server openssl-config
+  template:
+    src: api-openssl.cnf.j2
+    dest: "{{ playbook_dir }}/certs/api-openssl.cnf"
+  delegate_to: 127.0.0.1
+
+- name: Create Kubernetes API server key 
+  command:   openssl genrsa -out apiserver-key.pem 4096
+  args:
+    chdir:   certs
+    creates: apiserver-key.pem 
+  delegate_to: 127.0.0.1
+
+- name: Create Kubernetes API server csr
+  command:   openssl req -new -key apiserver-key.pem -out apiserver.csr 
+              -subj "/CN=kube-apiserver"
+              -config api-openssl.cnf
+  args:
+    chdir:   certs
+    creates: apiserver.csr
+  delegate_to: 127.0.0.1
+
+
+- name: Create Kubernetes API server certificate
+  command: openssl x509 -req -in apiserver.csr 
+             -CA    ca.pem
+             -CAkey ca-key.pem
+             -CAcreateserial
+             -out apiserver.pem
+             -days 500
+             -extensions v3_req
+             -extfile api-openssl.cnf
+  args:
+    chdir:   certs
+    creates: apiserver.pem
+  delegate_to: 127.0.0.1
+
+- name: Copy Kubernetes Minion/Worker openssl-config
+  template:
+    src:  worker-openssl.cnf.j2
+    dest: certs/worker-openssl.cnf
+  delegate_to: 127.0.0.1
+
+- name: Create Kubernetes Minion/Worker/ETCD server key
+  command:   openssl genrsa -out "{{ hostvars[item]['inventory_hostname'] }}"-worker-key.pem 4096
+  args:
+    chdir:   certs
+    creates: "{{ hostvars[item]['inventory_hostname'] }}-worker-key.pem"
+  with_items: 
+  - "{{ groups['worker'] }}"
+  - "{{ groups['master'] }}"
+  delegate_to: 127.0.0.1
+
+- name: Create Kubernetes Minion/Worker server csr
+  command:   openssl req -new 
+              -key "{{ hostvars[item]['inventory_hostname'] }}-worker-key.pem"
+              -out "{{ hostvars[item]['inventory_hostname'] }}-worker-key.csr"
+              -subj "/CN=system:node:{{ hostvars[item]['inventory_hostname'] }}/O=system:nodes"
+              -config worker-openssl.cnf
+  args:
+    chdir:   certs
+    creates: "{{ hostvars[item]['inventory_hostname'] }}-worker-key.csr"
+  environment:
+    WORKER_IP: "{{ hostvars[item]['inventory_hostname'] }}"
+  with_items: 
+  - "{{ groups['worker'] }}"
+  - "{{ groups['master'] }}"
+  delegate_to: 127.0.0.1
+
+
+
+- name: Create Kubernetes Minion/Worker/ETCD server certificate 
+  command: openssl x509 -req
+            -in    "{{ hostvars[item]['inventory_hostname'] }}-worker-key.csr"
+            -CA    ca.pem
+            -CAkey ca-key.pem
+            -CAcreateserial
+            -out "{{ hostvars[item]['inventory_hostname'] }}-worker.pem"
+            -days 500
+            -extensions v3_req
+            -extfile worker-openssl.cnf
+  
+  args:
+    chdir:   certs
+    creates: "{{ hostvars[item]['inventory_hostname'] }}-worker.pem"
+  environment:
+    WORKER_IP: "{{ hostvars[item]['inventory_hostname'] }}"
+  with_items: 
+  - "{{ groups['worker'] }}"
+  - "{{ groups['master'] }}"
+  delegate_to: 127.0.0.1
+  
+
+
+- name: Copy Kubernetes API server openssl-config
+  template:
+    src:  service-openssl.cnf.j2
+    dest: "{{ playbook_dir }}/certs/service-openssl.cnf"
+  delegate_to: 127.0.0.1
+
+- name: Create Kubernetes  Controller Manager key 
+  command:   openssl genrsa -out controller-key.pem 4096
+  args:
+    chdir:   certs
+    creates: controller-key.pem 
+  delegate_to: 127.0.0.1
+- name: Create Kubernetes Controller Manager  csr
+  command:   openssl req -new -key controller-key.pem -out controller.csr 
+              -subj "/CN=system:kube-controller-manager"
+              -config service-openssl.cnf
+  args:
+    chdir:   certs
+    creates: controller.csr
+  delegate_to: 127.0.0.1
+- name: Create Kubernetes Controller Manager  certificate
+  command: openssl x509 -req -in controller.csr 
+             -CA    ca.pem
+             -CAkey ca-key.pem
+             -CAcreateserial
+             -out controller.pem
+             -days 500
+             -extensions v3_req
+             -extfile service-openssl.cnf
+  args:
+    chdir:   certs
+    creates: controller.pem
+  delegate_to: 127.0.0.1
+
+- name: Create Kubernetes  Scheduler  key 
+  command:   openssl genrsa -out scheduler-key.pem 4096
+  args:
+    chdir:   certs
+    creates: scheduler-key.pem 
+  delegate_to: 127.0.0.1
+- name: Create Kubernetes Controller Manager  csr
+  command:   openssl req -new -key scheduler-key.pem -out scheduler.csr 
+              -subj "/CN=system:kube-scheduler"
+              -config service-openssl.cnf
+  args:
+    chdir:   certs
+    creates: scheduler.csr
+  delegate_to: 127.0.0.1
+- name: Create Kubernetes Controller Manager  certificate
+  command: openssl x509 -req -in scheduler.csr 
+             -CA    ca.pem
+             -CAkey ca-key.pem
+             -CAcreateserial
+             -out scheduler.pem
+             -days 500
+             -extensions v3_req
+             -extfile service-openssl.cnf
+  args:
+    chdir:   certs
+    creates: scheduler.pem
+  delegate_to: 127.0.0.1
+
+- name: Create Admin key 
+  command:   openssl genrsa -out cluster-admin-key.pem 4096
+  args:
+    chdir:   certs
+    creates: cluster-admin-key.pem 
+  delegate_to: 127.0.0.1
+- name: Create Kubernetes Controller Manager  csr
+  command:   openssl req -new -key cluster-admin-key.pem -out cluster-admin.csr 
+              -subj "/CN=k8s-admin/O=system:masters"
+              -config service-openssl.cnf
+  args:
+    chdir:   certs
+    creates: cluster-admin.csr
+  delegate_to: 127.0.0.1
+- name: Create Kubernetes Controller Manager  certificate
+  command: openssl x509 -req -in cluster-admin.csr 
+             -CA    ca.pem
+             -CAkey ca-key.pem
+             -CAcreateserial
+             -out cluster-admin.pem
+             -days 500
+             -extensions v3_req
+             -extfile service-openssl.cnf
+  args:
+    chdir:   certs
+    creates: cluster-admin.pem
+  delegate_to: 127.0.0.1
+
+
+
+- name: Create Namespace Users
+  command:   openssl genrsa -out cluster-namespace-{{ item }}-admin-key.pem 4096
+  args:
+    chdir:     certs
+    creates:   cluster-namespace-{{ item }}-admin-key.pem 
+  delegate_to: 127.0.0.1
+  with_items:  "{{ k8s_namespace_list }}"
+  when:        k8s_namespace_list is defined
+
+- name:       Create Namespace Users CSR
+  command:   openssl req -new -key  cluster-namespace-{{ item }}-admin-key.pem -out cluster-namespace-{{ item }}-admin.csr 
+              -subj "/CN={{ item }}-admin"
+              -config service-openssl.cnf
+  args:
+    chdir:     certs
+    creates:   cluster-namespace-{{ item }}-admin.csr
+  delegate_to: 127.0.0.1
+  with_items:  "{{ k8s_namespace_list }}"
+  when:        k8s_namespace_list is defined
+
+- name:   Create Namespace Users  certificate
+  command: openssl x509 -req -in  cluster-namespace-{{ item }}-admin.csr
+             -CA    ca.pem
+             -CAkey ca-key.pem
+             -CAcreateserial
+             -out  cluster-namespace-{{ item }}-admin.pem
+             -days 500
+             -extensions v3_req
+             -extfile service-openssl.cnf
+  args:
+    chdir:     certs
+    creates:   cluster-namespace-{{ item }}-admin.pem
+  delegate_to: 127.0.0.1
+  with_items:  "{{ k8s_namespace_list }}"
+  when:        k8s_namespace_list is defined
+
+
+- name: Create Bootstrap User
+  command:   openssl genrsa -out bootstrap-key.pem 4096
+  args:
+    chdir:     certs
+    creates:   bootstrap-key.pem
+  delegate_to: 127.0.0.1
+
+- name:       Create Bootstrap User CSR
+  command:   openssl req -new -key  bootstrap-key.pem -out bootstrap.csr 
+              -subj "/CN=kubelet-bootstrap/O=system:bootstrappers"
+              -config service-openssl.cnf
+  args:
+    chdir:     certs
+    creates:   bootstrapper.csr
+  delegate_to: 127.0.0.1
+
+- name:   Create Bootstrap Users  certificate
+  command: openssl x509 -req -in  bootstrap.csr
+             -CA    ca.pem
+             -CAkey ca-key.pem
+             -CAcreateserial
+             -out  bootstrap.pem
+             -days 500
+             -extensions v3_req
+             -extfile service-openssl.cnf
+  args:
+    chdir:     certs
+    creates:   bootstrap.pem
+  delegate_to: 127.0.0.1
+

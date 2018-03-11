@@ -1,0 +1,28 @@
+---
+
+# handlers file for kubeletContainer
+
+- name: restartkubelet
+  systemd:
+    name:          kubelet
+    state:         restarted
+    daemon_reload: yes
+
+
+- name: restartapiserver
+  systemd:
+    name:          apiserver
+    state:         restarted
+    daemon_reload: yes
+
+- name: restartcontroller
+  systemd:
+    name:          controller
+    state:         restarted
+    daemon_reload: yes
+
+- name: restartscheduler
+  systemd:
+    name:          scheduler
+    state:         restarted
+    daemon_reload: yes

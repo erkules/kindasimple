@@ -1,0 +1,102 @@
+---
+{% if k8s_namespace_list is defined %}
+{% for namespace in k8s_namespace_list|default([])%}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ namespace }}
+{% endfor %}
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: namespace-rbac
+rules:
+- apiGroups: 
+  - ""
+  - extensions
+  resources: 
+  - componentstatuses
+  - configmaps
+  - deployments
+  - deployments/rollback
+  - deployments/scale
+  - endpoints
+  - ingresses
+  - jobs
+  - logs
+  - persistentvolumeclaims
+  - pods
+  - pods/exec
+  - pods/portforward
+  - pods/proxy
+  - replicasets
+  - replicasets/scale
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:     ["*"]
+- apiGroups: 
+  - ""
+  - extensions
+  resources: 
+  - resroucequotas
+  - events
+  - componentstatus
+  - pods/log
+  - pods/status
+  - deployments/status
+  - replicasets/status
+  verbs:
+  - get
+  - watch
+  - list
+- nonResourceURLs:
+  - /healthz
+  - healthz/*
+  verbs:
+  - get
+  - post
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets
+  verbs: ["*"]
+
+{% for namespace in k8s_namespace_list|default([])%}
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: namespace-{{ namespace }}-bindings
+  namespace: {{ namespace }}
+subjects:
+- kind: User
+  name: {{ namespace }}-admin
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: namespace-rbac
+  apiGroup: rbac.authorization.k8s.io
+{% endfor %}
+
+
+{% for namespace in k8s_namespace_list|default([])%}
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: namespace-serviceaccount-{{ namespace }}-bindings
+  namespace: {{ namespace }}
+subjects:
+- kind: ServiceAccount
+  name: default
+  name: {{ namespace }}
+roleRef:
+  kind: ClusterRole
+  name: namespace-rbac
+  apiGroup: rbac.authorization.k8s.io
+{% endfor %}
+
+{% endif %}

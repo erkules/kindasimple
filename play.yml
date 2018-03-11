@@ -1,0 +1,12 @@
+- hosts: localhost
+  connection: local
+  gather_facts: no
+  roles:
+  - { role: roles/kubernetes-ca-manager, tags: ca                 }
+  - { role: roles/k8s-namespace,         tags: namespaces         }
+  - { role: roles/k8sdeploy,             tags: k8sdeploy          }
+- hosts: all
+  become: yes
+  remote_user: ubuntu
+  roles:
+  - { role: roles/kubeletContainer,      tags: kubelet             }

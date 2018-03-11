@@ -1,0 +1,87 @@
+---
+# tasks file for k8s-namespace
+- name: Generate local deployment dir
+  file:
+    path: "{{ k8s_localdeploydir }}"
+    state: directory
+    mode: 0777
+  delegate_to: 127.0.0.1
+
+- name: Create/Copy Namespace-Template
+  template:
+    src: namespaces.yml.j2
+    dest: "{{ k8s_localdeploydir }}/namespaces.yml"
+  delegate_to: 127.0.0.1
+
+- name: Create Subdir for every Namespace
+  file:
+    path: "{{ k8s_localdeploydir }}/{{ item }}"
+    state: directory
+    mode: 0777
+  with_items: "{{ k8s_namespace_list|default([]) }}"
+  delegate_to: 127.0.0.1
+- name: Copy Cert for Namspace User
+  copy:
+    src:   "certs/cluster-namespace-{{ item }}-admin.pem"
+    dest:  "{{ k8s_localdeploydir }}/{{ item }}/cluster-namespace-{{ item }}-admin.pem"
+  with_items: "{{ k8s_namespace_list|default([]) }}"
+  delegate_to: 127.0.0.1
+
+- name: Copy Key for Namspace User
+  copy:
+    src:   "certs/cluster-namespace-{{ item }}-admin-key.pem"
+    dest:  "{{ k8s_localdeploydir }}/{{ item }}/cluster-namespace-{{ item }}-admin-key.pem"
+  with_items: "{{ k8s_namespace_list|default([]) }}"
+  delegate_to: 127.0.0.1
+
+- name: Copy CA Cert for Namspace User
+  copy:
+    src:   "certs/ca.pem"
+    dest:  "{{ k8s_localdeploydir }}/{{ item }}/ca.pem"
+  with_items: "{{ k8s_namespace_list|default([]) }}"
+  delegate_to: 127.0.0.1
+
+- name: Copy Kubeconfig for Namespace User
+  template:
+    src:  kubeconfig.yml.j2
+    dest: "{{ k8s_localdeploydir }}/{{ item }}/kubeconfig.yml"
+  with_items: "{{ k8s_namespace_list|default([]) }}"
+  delegate_to: 127.0.0.1
+
+
+- name: Copy README for Namespace User
+  template:
+    src:  README.md.j2
+    dest: "{{ k8s_localdeploydir }}/{{ item  }}/README.md"
+  with_items: "{{ k8s_namespace_list|default([]) }}"
+  delegate_to: 127.0.0.1
+
+- name: Create Subdir for Cluster Admin
+  file:
+    path: "{{ k8s_localdeploydir }}/cluster-admin"
+    state: directory
+    mode: 0777
+  delegate_to: 127.0.0.1
+- name: Copy Cert Cluster Admin
+  copy:
+    src:   "certs/cluster-admin.pem"
+    dest:  "{{ k8s_localdeploydir }}/cluster-admin/cluster-admin.pem"
+  delegate_to: 127.0.0.1
+
+- name: Copy Key for Cluster Admin
+  copy:
+    src:   "certs/cluster-admin-key.pem"
+    dest:  "{{ k8s_localdeploydir }}/cluster-admin/cluster-admin-key.pem"
+  delegate_to: 127.0.0.1
+
+- name: Copy CA Cert for Cluster Admoin
+  copy:
+    src:   "certs/ca.pem"
+    dest:  "{{ k8s_localdeploydir }}/cluster-admin/ca.pem"
+  delegate_to: 127.0.0.1
+
+- name: Copy Kubeconfig for Namespace User
+  template:
+    src:  cluster-admin-kubeconfig.yml.j2
+    dest: "{{ k8s_localdeploydir }}/cluster-admin/kubeconfig.yml"
+  delegate_to: 127.0.0.1

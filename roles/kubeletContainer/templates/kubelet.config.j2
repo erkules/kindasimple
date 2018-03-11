@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Config
+current-context: k8s
+clusters:
+- name: apiserver
+  cluster:
+    server: https://{{apiserver}}:6443
+    certificate-authority: /etc/kubernetes/ssl/ca.pem
+users:
+- name: kubelet
+  user:
+    client-certificate: /etc/kubernetes/ssl/hostname.pem
+    client-key:         /etc/kubernetes/ssl/hostname-key.pem
+contexts:
+  - name: k8s
+    context:
+      cluster: apiserver
+      user: kubelet

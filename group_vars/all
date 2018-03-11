@@ -1,0 +1,3 @@
+localdeploydir: ./deployfiles
+hyperkubeimage: gcr.io/google-containers/hyperkube:v1.9.3
+k8s_localdeploydir: ./clusterfiles

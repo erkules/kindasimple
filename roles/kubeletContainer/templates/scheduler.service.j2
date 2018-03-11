@@ -1,0 +1,13 @@
+[Unit]
+Description = Kubelet Controller
+After       = network.target docker.service apiserver.service k8sgencert.service
+[Service]
+ExecStartPre = -/usr/bin/docker rm -f scheduler
+ExecStart    = /usr/bin/docker run --rm --name  scheduler -v /etc/kubernetes/ssl:/etc/kubernetes/ssl:ro {{hyperkubeimage}} \
+               /hyperkube scheduler  --leader-elect=true --kubeconfig /etc/kubernetes/ssl/kubeconfig-scheduler.yml
+Restart=         always
+RestartSec=      10
+TimeoutStartSec= 300
+
+[Install]
+WantedBy=multi-user.target

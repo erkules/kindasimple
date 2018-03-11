@@ -1,0 +1,102 @@
+---
+# tasks file for kubeletContainer
+
+- name: Our Kubernetes SSL/Config Dir should exist
+  file:
+    dest:  /etc/kubernetes/ssl
+    state: directory
+- name: Install HostKey
+  copy: 
+    src: "certs/{{ inventory_hostname }}-worker-key.pem"
+    dest: "/etc/kubernetes/ssl/hostname-key.pem"
+- name: Install HostCert
+  copy: 
+    src: "certs/{{ inventory_hostname }}-worker.pem"
+    dest: "/etc/kubernetes/ssl/hostname.pem"
+- name: Install ca cert
+  copy: 
+    src: "certs/ca.pem"
+    dest: "/etc/kubernetes/ssl/ca.pem"
+- name: Install Controllplane Certs
+  copy: 
+    src: "certs/{{ item }}"
+    dest: "/etc/kubernetes/ssl/{{ item }}"
+  with_items:
+  - ca-key.pem
+  - apiserver.pem
+  - apiserver-key.pem
+  - cluster-admin.pem
+  - cluster-admin-key.pem
+  - controller.pem
+  - controller-key.pem
+  - scheduler.pem
+  - scheduler-key.pem
+  when: '"master" in group_names'
+
+- name: copy apiserver unit file
+  template:
+    src:  apiserver.service.j2
+    dest: /etc/systemd/system/apiserver.service
+  notify: restartapiserver
+  when: '"master" in group_names'
+- name: enable and start apiserver
+  systemd:
+    name: apiserver
+    enabled: yes
+    state: started
+  when: '"master" in group_names'
+
+
+- name: copy the controller config
+  template:
+    src: controller.config.j2
+    dest: /etc/kubernetes/ssl/kubeconfig-controller.yml
+  notify: restartcontroller
+  when: '"master" in group_names'
+- name: copy controller unit file
+  template:
+    src:  controller.service.j2
+    dest: /etc/systemd/system/controller.service
+  notify: restartcontroller
+  when: '"master" in group_names'
+- name: the controller should run
+  systemd:
+    name: controller
+    enabled: yes
+    state: started
+  when: '"master" in group_names'
+
+- name: copy the scheduler config
+  template:
+    src: scheduler.config.j2
+    dest: /etc/kubernetes/ssl/kubeconfig-scheduler.yml
+  notify: restartscheduler
+  when: '"master" in group_names'
+- name: copy scheduler unit file
+  template:
+    src:  scheduler.service.j2
+    dest: /etc/systemd/system/scheduler.service
+  notify: restartscheduler
+  when: '"master" in group_names'
+- name: the scheduler should run
+  systemd:
+    name: scheduler
+    enabled: yes
+    state: started
+  when: '"master" in group_names'
+
+- name: copy the kubelet config
+  template:
+    src: kubelet.config.j2
+    dest: /etc/kubernetes/ssl/kubeconfig-node.yml
+  notify: restartkubelet
+- name: copy kubelet unit file
+  template:
+    src:  kubelet.service.j2
+    dest: /etc/systemd/system/kubelet.service
+  notify: restartkubelet
+- name: the kubelet should run
+  systemd:
+    name: kubelet
+    enabled: yes
+    state: started

@@ -1,0 +1,350 @@
+#cloud-config
+packages:
+- ${package}
+
+runcmd:
+- systemctl start ${package}
+- systemctl enable ${package}
+- systemctl start k8sgencert
+- systemctl start etcd
+- systemctl start apiserver
+- systemctl start controller
+- systemctl start scheduler
+- systemctl start kubelet
+- systemctl enable k8sgencert
+- systemctl enable etcd
+- systemctl enable apiserver
+- systemctl enable controller
+- systemctl enable scheduler
+- systemctl enable kubelet
+
+
+write_files:
+- path: /etc/kubernetes/ssl/ca-key.pem
+  content: |
+    -----BEGIN RSA PRIVATE KEY-----
+    MIIEowIBAAKCAQEAtPSQaHsNj+oV8bnbRqj5VaPLv4FL5NOqwLghjJVzi8EAfbMm
+    cZbT/yIWdbf56E53zJPUEEkkaIUOpv5Fi3fQpRMVuVipIa/602DBeDFDr66P3Dw/
+    R7Mm1pcOLHzV/GrMgqIs9qgkDHrY0ndzuFZ9WT6vebh+xO9LYETpITN5LyWqs202
+    quIkNr3eQ0qvQUFqHkgOdnru4MNQkVzb//c+lbQ+RrDbV+WUboOkD72d+UxiXYVm
+    AYzKBjuqV/XqxTd5it8N+Di1itU2hZ5P4YHOrGhxK+MzVk0V6SM8Q+OxkvO+PU1a
+    5ujKfu2IRV7+5rFSpiYMMwfMhx4VXilRCXSxIQIDAQABAoIBAAah2BEcQXj+2WMM
+    rs6+LrVG1ZblRETUxTNfDEu8xolev4fb4xLStl5pf209Gvm6toVW/bTDGYSDK/BO
+    7XmZIJqMQoWSjFBhxM2uhCjFlXeA7GDkDGWyWUAQNULIKIeh2nEHRKKdswSKFBxS
+    qHkfImT8+S1655qMMrUKkYjX/B8QMHp/V6f2FFFVW0VGl34mSWBESoiP3sjVN7+e
+    iip4yf20oTgQBv3axkV9nR7zK3S/JIo4Hhz0V0Oikaa3WP/XssmOmcwuf2TDZ4SI
+    YExXsG8mlJf/qs2B2Jt5NmZgyr4PPm4HXw1knY0vAZdvC9Fwpy7Usz+o8kuyDavt
+    UV7KwYECgYEAwCZO/UKKmsCqrZjAOdbmwjo8A1yTY6zB2KENqxu9jeKQhiL+8ugh
+    IqaP7/ZagukKVfae95oq4VDC+kESnEvKa1TMp1Vz7hsFy0no+D28q/FmHD+DMPSl
+    o2uVPfAiwdFgPgI036taxStEo0J99lRUKxYQuMFk9Ev1/dZdyENmMGkCgYEA8RX7
+    rTmwZKXbR2gNCouhQsvIY0G4uBqj1MkO10IgD+16YAhHN747zFgOtYf75STeyz6L
+    Kkr7/05SZVkSqEyWxFNW5IcG5xAErYgHiCmiGGjWBcflySFs0TQ/kM8LNV4IrzPe
+    mdh5B+f06JaHKViMaKFcgvBxZbKzIwr+Vxi/Y/kCgYAE7zbqFBJhJP99E8Yj9hvY
+    8wvlfjQexCn6OTCTq1Oz2BSkDTQE4ucu754UqHvsjrWAPaQZcbEWNi+7o34p21xo
+    YzYaOfyPKcx9SvmbnmJA/CMGKK9iy3WRe8rKW2dZGNpi3UWkVM8w7wqFMsjvUX0T
+    2i41wGmqSGUZzq573Rc7uQKBgQDfLLZ6uTitM0w2YgAQjwmNSBAMsj5JT3/x7t2q
+    LzB3DiOG2qLy20uH8sxLB8MLcII+K3uwfxGgWeS0pSw8WAoJXAzIKKcfJxjte0td
+    pQzFA+d8GnyBIEwXrgJaDxAVKyNm7OFYEaiYxQVWemJMyAfSo+172RFgT3i9K+Qe
+    xG4IIQKBgAg8eIVdfLuKaLMLoJtwfiqFC2APbS8Yr/NiUKZzsyP7QqIo48tjPlAp
+    kFgSfChMUaR4cDMrQsGalfNubbfunJT0GQRkONAMzONEjzs+mfDlZ15x5F1w3u9V
+    yMITprNLJg0501IWWpgY47g/dBQmGiYC2Vbt5ThOGSTs5DTGACKD
+    -----END RSA PRIVATE KEY-----
+- path: '/etc/kubernetes/ssl/ca.pem'
+  content: |
+    -----BEGIN CERTIFICATE-----
+    MIIDhDCCAmygAwIBAgIUfO7g22wCMq1JINd3xDHJdsNaiGgwDQYJKoZIhvcNAQEL
+    BQAwSDELMAkGA1UEBhMCREUxFjAUBgNVBAgTDVNhbiBGcmFuY2lzY28xCzAJBgNV
+    BAcTAkhFMRQwEgYDVQQDEwtleGFtcGxlLmNvbTAeFw0xODAxMjMxMzQ2MDBaFw0y
+    MzAxMjIxMzQ2MDBaMEgxCzAJBgNVBAYTAkRFMRYwFAYDVQQIEw1TYW4gRnJhbmNp
+    c2NvMQswCQYDVQQHEwJIRTEUMBIGA1UEAxMLZXhhbXBsZS5jb20wggEiMA0GCSqG
+    SIb3DQEBAQUAA4IBDwAwggEKAoIBAQC09JBoew2P6hXxudtGqPlVo8u/gUvk06rA
+    uCGMlXOLwQB9syZxltP/IhZ1t/noTnfMk9QQSSRohQ6m/kWLd9ClExW5WKkhr/rT
+    YMF4MUOvro/cPD9HsybWlw4sfNX8asyCoiz2qCQMetjSd3O4Vn1ZPq95uH7E70tg
+    ROkhM3kvJaqzbTaq4iQ2vd5DSq9BQWoeSA52eu7gw1CRXNv/9z6VtD5GsNtX5ZRu
+    g6QPvZ35TGJdhWYBjMoGO6pX9erFN3mK3w34OLWK1TaFnk/hgc6saHEr4zNWTRXp
+    IzxD47GS8749TVrm6Mp+7YhFXv7msVKmJgwzB8yHHhVeKVEJdLEhAgMBAAGjZjBk
+    MA4GA1UdDwEB/wQEAwIBBjASBgNVHRMBAf8ECDAGAQH/AgECMB0GA1UdDgQWBBRB
+    lj0XXbMfwfvlRE9AhRDKZEhB0zAfBgNVHSMEGDAWgBRBlj0XXbMfwfvlRE9AhRDK
+    ZEhB0zANBgkqhkiG9w0BAQsFAAOCAQEAOnoxBEU6jltf+Gt8BK9EMDzmR7vsgoNr
+    DXFLZ8j0KcnNfhU8UKYWDnkKavLOQjiNxlICEZKJ1ZGt0syixCrnx9pS9hvsCeHz
+    /Sae8jir/mZuazku7O5biu2JU8UspcH/2GqrgH7d2QRO0TcZxa08UhM+TTTENWaz
+    wn5u10spboz17YG7Oaza6w0+5LfTL4epyuUxnBrPaSK7EjVVJIqO8J5FuA4xwYVH
+    NTmdFB4wnCw1Q3O631xoTsE21k75pTyQ8rNzG4/XVyICe/YWZGBWBzOjSSXIBuJ/
+    g5wdpyqc8lE4a02+eUOkTR1KNCHEf659hcQsdL9pfB9hpH76sKKueA==
+    -----END CERTIFICATE-----
+- path: '/etc/kubernetes/ssl/generate-k8scerts.sh'
+  permissions: '0555'
+  content:  |
+      #/bin/bash
+      IPADD=$(ip route get 1 | awk '{print $NF;exit}')
+      #IPADD=$(hostname)
+      sed s/IPADD/$IPADD/ -i generate-k8scerts2.sh
+      sed s/IPADD/$IPADD/ -i *.yml
+      bash ./generate-k8scerts2.sh
+- path: '/etc/kubernetes/ssl/generate-k8scerts2.sh'
+  permissions: '0555'
+  content:  |
+      test -f ca.pem || { echo "ca.pem missing! existing" && exit 1 ; }
+      test -f ca-key.pem || { echo "ca-key.pem missing! existing" && exit 1 ; }
+      echo '{"CN":"system:node:IPADD","names":[{"O":"system:nodes"}],"hosts":[""],"key":{"algo":"rsa","size":2048}}' | cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=peer -hostname="IPAADD" - | cfssljson -bare hostname
+
+      # Admin
+      echo '{"CN":"k8s-admin","names":[{"O":"system:masters"}],"hosts":[""],"key":{"algo":"rsa","size":2048}}' | cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=peer  - | cfssljson -bare kubeadmin
+
+      # Apiserver
+      echo '{"CN":"kube-apiserver","hosts":[""],"key":{"algo":"rsa","size":2048}}' | cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=peer -hostname="IPADD,localhost,kubernetes,kubernetes.default,kubernetes.default.svc,kubernetes.default.svc.cluster.local,10.30.10.1" - | cfssljson -bare apiserver
+
+      # Scheduler
+      echo '{"CN":"system:kube-scheduler","hosts":[""],"key":{"algo":"rsa","size":2048}}' | cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=peer  - | cfssljson -bare scheduler
+
+      # Controller
+      echo '{"CN":"system:kube-controller-manager","hosts":[""],"key":{"algo":"rsa","size":2048}}' | cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=peer  - | cfssljson -bare controller
+      touch /etc/kubernetes/ssl/.certscreated
+- path: '/etc/kubernetes/ssl/ca-config.json'
+  permissions: 0444
+  content: |
+    {
+        "signing": {
+            "default": {
+                "expiry": "168h"
+            },
+            "profiles": {
+                "www": {
+                    "expiry": "8760h",
+                    "usages": [
+                        "signing",
+                        "key encipherment",
+                        "server auth"
+                    ]
+                },
+                "client": {
+                    "expiry": "8760h",
+                    "usages": [
+                        "signing",
+                        "key encipherment",
+                        "client auth"
+                    ]
+                },
+                "server": {
+                    "expiry": "8760h",
+                    "usages": [
+                        "signing",
+                        "key encipherment",
+                        "server auth"
+                    ]
+                },
+                "peer": {
+                    "expiry": "8760h",
+                    "usages": [
+                        "signing",
+                        "key encipherment",
+                        "server auth",
+                        "client auth"
+                    ]
+                }
+            }
+        }
+    }
+- path:      /etc/kubernetes/ssl/kubeconfig-node.yml
+  permissions:       0644
+  content: |
+    apiVersion: v1
+    kind: Config
+    current-context: k8s
+    clusters:
+    - name: apiserver
+      cluster:
+        server: https://IPADD:6443
+        certificate-authority: /etc/kubernetes/ssl/ca.pem
+    users:
+    - name: kubelet
+      user:
+        client-certificate: /etc/kubernetes/ssl/hostname.pem
+        client-key:         /etc/kubernetes/ssl/hostname-key.pem
+    contexts:
+      - name: k8s
+        context:
+          cluster: apiserver
+          user: kubelet
+- path:      /etc/kubernetes/ssl/kubeconfig-controller.yml
+  permissions:       0644
+  content: |
+    apiVersion: v1
+    kind: Config
+    current-context: k8s
+    clusters:
+    - name: controller
+      cluster:
+        server: https://IPADD:6443
+        certificate-authority: /etc/kubernetes/ssl/ca.pem
+    users:
+    - name: controller
+      user:
+        client-certificate: /etc/kubernetes/ssl/controller.pem
+        client-key:         /etc/kubernetes/ssl/controller-key.pem
+    contexts:
+      - name: k8s
+        context:
+          cluster: controller
+          user: controller
+- path:      /etc/kubernetes/ssl/kubeconfig-scheduler.yml
+  permissions:       0644
+  content: |
+    apiVersion: v1
+    kind: Config
+    current-context: k8s
+    clusters:
+    - name: cluster
+      cluster:
+        server: https://IPADD:6443
+        certificate-authority: /etc/kubernetes/ssl/ca.pem
+    users:
+    - name: scheduler
+      user:
+        client-certificate: /etc/kubernetes/ssl/scheduler.pem
+        client-key:         /etc/kubernetes/ssl/scheduler-key.pem
+    contexts:
+      - name: k8s
+        context:
+          cluster: cluster
+          user:  scheduler
+- path: /etc/systemd/system/k8sgencert.service
+  content: |
+    [Unit]
+    Description = Create HostCerts for K8s/etcd
+    Before      = kubelet.service etcd.service
+    After       = docker.service
+    ConditionPathExists = !/etc/kubernetes/ssl/.certscreated
+    [Service]
+    ExecStart        = /usr/bin/docker run  --rm --net host -w /etc/kubernetes/ssl  -v /etc/kubernetes/ssl:/etc/kubernetes/ssl/   --entrypoint sh cfssl/cfssl  ./generate-k8scerts.sh
+    RemainAfterExit = yes
+    Type             = oneshot
+    [Install]
+    WantedBy = multi-user.target
+
+- path: /etc/systemd/system/etcd.service
+  content: |
+    [Unit]
+    Description = Etcd Service
+    After       = network.target docker.service k8sgencert.service
+    [Service]
+    ExecStartPre = -/usr/bin/docker rm -f etcd
+    ExecStart   =  /usr/bin/docker run  -v etcd:/data/  --rm --net=host -v /etc/kubernetes/ssl:/etc/kubernetes/ssl:ro \
+    --name=etcd  "${etcdimage}" etcd  --debug --data-dir /data
+    Restart      = always
+    RestartSec=10
+    [Install]
+    WantedBy    = multi-user.target
+- path: /etc/systemd/system/kubelet.service
+  content: |
+    [Unit]
+    Description = Kubelet Service
+    After       = network.target docker.service k8sgencert.service
+    [Service]
+    ExecStartPre = -/usr/bin/mkdir -p /usr/local/bin
+    ExecStartPre = -/usr/bin/docker run --rm -v /usr/local/bin:/srv ${hyperkubeimage} sh -c 'cp /hyperkube /srv/kubectl'
+    ExecStartPre = -/usr/bin/mkdir -p /etc/kubernetes/manifests
+    ExecStartPre = -/usr/bin/docker rm -f kubelet
+    ExecStartPre = -/bin/mkdir -p /var/lib/kubelet
+    ExecStartPre = -/bin/mount --bind /var/lib/kubelet /var/lib/kubelet
+    ExecStartPre = -/bin/mount --make-shared /var/lib/kubelet
+    ExecStart    =  /usr/bin/docker run  --rm --name=kubelet --net=host  --pid=host --privileged=true -v /etc/kubernetes/ssl:/etc/kubernetes/ssl:ro \
+    -v /:/rootfs:ro \
+    -v /sys:/sys:ro \
+    -v /var/lib/docker:/var/lib/docker:rw \
+    -v /var/lib/kubelet:/var/lib/kubelet:shared \
+    -v /lib/modules:/lib/modules:ro \
+    -v /var/run:/var/run:rw \
+    -v /etc/kubernetes/manifests:/etc/kubernetes/manifests:rw \
+    -v /etc/cni/:/etc/cni/:rw \
+    -v /opt/cni/bin:/opt/cni/bin \
+    ${hyperkubeimage} kubelet --pod-manifest-path /etc/kubernetes/manifests --allow-privileged true  \
+    --kubeconfig=/etc/kubernetes/ssl/kubeconfig-node.yml \
+    --container-runtime=docker \
+    --allow-privileged=true \
+    --cluster_dns=10.30.10.11 \
+    --cluster_domain=cluster.local \
+    --network-plugin=cni \
+    --register-with-taints=node-role.kubernetes.io/master=:NoSchedule \
+    --node-labels=node-role.kubernetes.io/master \
+    --kube-reserved=memory=200Mi,cpu=100m \
+    --system-reserved=memory=200Mi,cpu=100m \
+    --volume-plugin-dir=/var/lib/kubelet/volumeplugins \
+    --pod-manifest-path=/etc/kubernetes/manifests
+    Restart=         always
+    RestartSec=      10
+    TimeoutStartSec= 300
+
+    [Install]
+    WantedBy=multi-user.target
+- path: /etc/systemd/system/apiserver.service
+  content: |
+    [Unit]
+    Description = Kubelet Apiserver
+    After       = network.target docker.service k8sgencert.service
+    [Service]
+    ExecStartPre = -/usr/bin/docker rm -f apiserver
+    ExecStart    = /usr/bin/docker run --rm --name  apiserver -v /etc/kubernetes/ssl:/etc/kubernetes/ssl:ro \
+                   --net=host ${hyperkubeimage} \
+                   /hyperkube apiserver  \
+                   --allow-privileged=true \
+                   --service-cluster-ip-range=10.30.10.0/24 \
+                   --insecure-bind-address=127.0.0.1 \
+                   --apiserver-count=1 \
+                   --tls-cert-file=/etc/kubernetes/ssl/apiserver.pem \
+                   --tls-private-key-file=/etc/kubernetes/ssl/apiserver-key.pem \
+                   --client-ca-file=/etc/kubernetes/ssl/ca.pem \
+                   --bind-address=0.0.0.0 \
+                   --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota,DefaultTolerationSeconds,PersistentVolumeLabel,NodeRestriction \
+                   --authorization-mode=Node,RBAC \
+                   --etcd-servers=http://localhost:2379  \
+                   --v=2 \
+                   --service-account-key-file=/etc/kubernetes/ssl/apiserver-key.pem
+    Restart=         always
+    RestartSec=      10
+    TimeoutStartSec= 300
+
+    [Install]
+    WantedBy=multi-user.target
+- path: /etc/systemd/system/controller.service
+  content: |
+    [Unit]
+    Description = Kubelet Controller
+    After       = network.target docker.service apiserver.service k8sgencert.service
+    [Service]
+    ExecStartPre = -/usr/bin/docker rm -f controller
+    ExecStart    = /usr/bin/docker run --rm --name  controller -v /etc/kubernetes/ssl:/etc/kubernetes/ssl:ro ${hyperkubeimage} \
+                   /hyperkube \
+                   controller-manager \
+                   --kubeconfig=/etc/kubernetes/ssl/kubeconfig-controller.yml \
+                   --leader-elect=true \
+                   --service-account-private-key-file=/etc/kubernetes/ssl/apiserver-key.pem \
+                   --root-ca-file=/etc/kubernetes/ssl/ca.pem \
+                   --cluster-cidr=10.244.0.0/16 \
+                   --allocate-node-cidrs=true \
+                   --enable-dynamic-provisioning=true \
+                   --cluster-signing-cert-file=/etc/kubernetes/ssl/ca.pem \
+                   --cluster-signing-key-file=/etc/kubernetes/ssl/ca-key.pem  \
+                   --use-service-account-credentials
+    Restart=         always
+    RestartSec=      10
+    TimeoutStartSec= 300
+
+    [Install]
+    WantedBy=multi-user.target
+
+- path: /etc/systemd/system/scheduler.service
+  content: |
+    [Unit]
+    Description = Kubelet Controller
+    After       = network.target docker.service apiserver.service k8sgencert.service
+    [Service]
+    ExecStartPre = -/usr/bin/docker rm -f scheduler
+    ExecStart    = /usr/bin/docker run --rm --name  scheduler -v /etc/kubernetes/ssl:/etc/kubernetes/ssl:ro ${hyperkubeimage} \
+                   /hyperkube scheduler  --leader-elect=true --kubeconfig /etc/kubernetes/ssl/kubeconfig-scheduler.yml
+    Restart=         always
+    RestartSec=      10
+    TimeoutStartSec= 300
+
+    [Install]
+    WantedBy=multi-user.target
