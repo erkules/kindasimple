@@ -56,4 +56,3 @@ Use that credentials to apply all the ressources in the deployfiles directory.
 
 And now you are done.
 
-parameter.tvars.vorlage
